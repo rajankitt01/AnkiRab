@@ -1,0 +1,32 @@
+{
+  "name": "ankirab-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ANKIRAB.com — Complete Multilingual Anime Streaming and Discovery Platform",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces --if-present",
+    "dev:api": "npm run dev --workspace=@ankirab/api",
+    "dev:web": "npm run dev --workspace=@ankirab/web",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "db:generate": "npm run db:generate --workspace=@ankirab/api",
+    "db:push": "npm run db:push --workspace=@ankirab/api",
+    "db:seed": "npm run db:seed --workspace=@ankirab/api"
+  },
+  "keywords": [
+    "anime",
+    "streaming",
+    "ankirab",
+    "hls",
+    "hindi-dubbed",
+    "english-dubbed",
+    "multilingual"
+  ],
+  "author": "ANKIRAB Team",
+  "license": "MIT"
+}

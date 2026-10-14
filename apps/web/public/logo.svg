@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 60" width="240" height="60">
+  <defs>
+    <linearGradient id="ankirabGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8B5CF6"/>
+      <stop offset="100%" stop-color="#06B6D4"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="glow"/>
+      <feComposite in="SourceGraphic" in2="glow" operator="over"/>
+    </filter>
+  </defs>
+  
+  <!-- Icon Symbol: Stylized A with play glyph -->
+  <polygon points="12,48 26,12 40,48 31,48 26,34 21,48" fill="url(#ankirabGrad)" filter="url(#glow)"/>
+  <polygon points="23,38 32,32 23,26" fill="#FFFFFF"/>
+
+  <!-- Text ANKIRAB -->
+  <text x="50" y="41" font-family="'Orbitron', sans-serif, 'Arial Black'" font-size="28" font-weight="900" letter-spacing="2" fill="#FFFFFF">
+    ANKI<tspan fill="url(#ankirabGrad)">RAB</tspan>
+  </text>
+  
+  <!-- Subtle .COM badge -->
+  <rect x="188" y="24" width="42" height="18" rx="4" fill="#1F2432" stroke="#8B5CF6" stroke-width="1"/>
+  <text x="194" y="37" font-family="'Inter', sans-serif" font-size="10" font-weight="700" fill="#06B6D4">.COM</text>
+</svg>
