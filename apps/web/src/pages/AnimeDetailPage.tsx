@@ -4,6 +4,7 @@ import { animeService } from '../services/anime.service';
 import { userService } from '../services/auth.service';
 import { useAuthStore } from '../store/authStore';
 import { useToastStore } from '../store/toastStore';
+import { usePlayerStore } from '../store/playerStore';
 import { AnimeDto, WatchlistItemDto } from '@ankirab/shared';
 import { AnimeCard } from '../components/anime/AnimeCard';
 import {
@@ -27,6 +28,7 @@ export const AnimeDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated, openLoginModal } = useAuthStore();
   const { addToast } = useToastStore();
+  const { audioLanguage, setAudioLanguage } = usePlayerStore();
 
   const [anime, setAnime] = useState<AnimeDto | null>(null);
   const [related, setRelated] = useState<AnimeDto[]>([]);
@@ -122,6 +124,13 @@ export const AnimeDetailPage: React.FC = () => {
         <img
           src={anime.bannerImage || anime.coverImage || anime.posterImage}
           alt={anime.title}
+          referrerPolicy="no-referrer"
+          onError={(e) => {
+            const target = e.currentTarget;
+            if (anime.posterImage && target.src !== anime.posterImage) {
+              target.src = anime.posterImage;
+            }
+          }}
           className="w-full h-full object-cover filter brightness-75"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-ankirab-darkest via-ankirab-darkest/70 to-transparent" />
@@ -135,7 +144,12 @@ export const AnimeDetailPage: React.FC = () => {
           {/* Left Column: Poster & Quick Info */}
           <div className="w-full md:w-72 flex-shrink-0 flex flex-col items-center md:items-start">
             <div className="w-56 sm:w-64 md:w-full aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl border-2 border-ankirab-border/80 bg-ankirab-card">
-              <img src={anime.posterImage} alt={anime.title} className="w-full h-full object-cover" />
+              <img
+                src={anime.posterImage}
+                alt={anime.title}
+                referrerPolicy="no-referrer"
+                className="w-full h-full object-cover"
+              />
             </div>
 
             {/* Action Buttons */}
@@ -149,6 +163,58 @@ export const AnimeDetailPage: React.FC = () => {
                   <span>Start Watching Ep 1</span>
                 </button>
               )}
+
+              {/* Preferred Audio Language Picker */}
+              <div className="w-full flex items-center justify-between p-2.5 bg-ankirab-card border border-ankirab-border rounded-xl">
+                <span className="text-xs font-bold text-gray-300 flex items-center gap-1.5">
+                  <Languages className="w-3.5 h-3.5 text-ankirab-purple" />
+                  Audio:
+                </span>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => {
+                      setAudioLanguage('hi');
+                      addToast('Preferred audio set to Hindi Dubbed', 'info');
+                    }}
+                    className={`text-[11px] font-bold px-2 py-0.5 rounded transition ${
+                      audioLanguage === 'hi'
+                        ? 'bg-amber-500 text-white shadow-sm'
+                        : 'text-gray-400 hover:text-white bg-ankirab-surface'
+                    }`}
+                    title="Hindi Dubbed"
+                  >
+                    🇮🇳 Hindi
+                  </button>
+                  <button
+                    onClick={() => {
+                      setAudioLanguage('en');
+                      addToast('Preferred audio set to English Dubbed', 'info');
+                    }}
+                    className={`text-[11px] font-bold px-2 py-0.5 rounded transition ${
+                      audioLanguage === 'en'
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'text-gray-400 hover:text-white bg-ankirab-surface'
+                    }`}
+                    title="English Dubbed"
+                  >
+                    🇬🇧 Eng
+                  </button>
+                  <button
+                    onClick={() => {
+                      setAudioLanguage('ja');
+                      addToast('Preferred audio set to Japanese Subbed', 'info');
+                    }}
+                    className={`text-[11px] font-bold px-2 py-0.5 rounded transition ${
+                      audioLanguage === 'ja'
+                        ? 'bg-rose-600 text-white shadow-sm'
+                        : 'text-gray-400 hover:text-white bg-ankirab-surface'
+                    }`}
+                    title="Japanese Subbed"
+                  >
+                    🇯🇵 Jap
+                  </button>
+                </div>
+              </div>
 
               <div className="flex gap-2">
                 <button
@@ -324,7 +390,7 @@ export const AnimeDetailPage: React.FC = () => {
 
                 {/* Season Switcher */}
                 {anime.seasons && anime.seasons.length > 1 && (
-                  <div className="flex gap-1.5">
+                  <div className="flex flex-wrap gap-1.5">
                     {anime.seasons.map((s, idx) => (
                       <button
                         key={s.id}
@@ -345,7 +411,9 @@ export const AnimeDetailPage: React.FC = () => {
               {/* Episodes Grid/List */}
               {currentSeason && currentSeason.episodes && currentSeason.episodes.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {currentSeason.episodes.map((ep) => (
+                  {[...currentSeason.episodes]
+                    .sort((a, b) => a.episodeNumber - b.episodeNumber)
+                    .map((ep) => (
                     <Link
                       key={ep.id}
                       to={`/watch/${ep.id}`}
@@ -356,6 +424,7 @@ export const AnimeDetailPage: React.FC = () => {
                         <img
                           src={ep.thumbnail || anime.posterImage}
                           alt={ep.title}
+                          referrerPolicy="no-referrer"
                           className="w-full h-full object-cover group-hover:scale-105 transition"
                         />
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
@@ -379,12 +448,23 @@ export const AnimeDetailPage: React.FC = () => {
                           )}
                         </div>
 
-                        {ep.durationMinutes && (
-                          <span className="text-[11px] text-gray-500 flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {ep.durationMinutes}m
+                        <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                          {ep.durationMinutes && (
+                            <span className="text-[11px] text-gray-400 flex items-center gap-1 font-mono mr-1">
+                              <Clock className="w-3 h-3" />
+                              {ep.durationMinutes}m
+                            </span>
+                          )}
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                            Hindi
                           </span>
-                        )}
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-300 border border-blue-500/30">
+                            Eng
+                          </span>
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-300 border border-rose-500/30">
+                            Jap
+                          </span>
+                        </div>
                       </div>
                     </Link>
                   ))}

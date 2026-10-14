@@ -14,6 +14,7 @@ router.get('/featured', (req, res, next) => controller.featured(req, res, next))
 router.get('/trending', (req, res, next) => controller.trending(req, res, next));
 router.get('/popular', (req, res, next) => controller.popular(req, res, next));
 router.get('/recent', (req, res, next) => controller.recent(req, res, next));
+router.get('/recently-added', (req, res, next) => controller.recent(req, res, next));
 router.get('/hindi-dubbed', (req, res, next) => controller.hindiDubbed(req, res, next));
 router.get('/english-dubbed', (req, res, next) => controller.englishDubbed(req, res, next));
 router.get('/genres', (req, res, next) => controller.getGenres(req, res, next));

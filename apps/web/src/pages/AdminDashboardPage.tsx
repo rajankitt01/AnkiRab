@@ -441,7 +441,7 @@ export const AdminDashboardPage: React.FC = () => {
                 {animeList.map((a) => (
                   <tr key={a.id} className="hover:bg-ankirab-surface/50 transition">
                     <td className="p-3.5 flex items-center gap-3">
-                      <img src={a.posterImage} alt={a.title} className="w-9 h-12 object-cover rounded" />
+                      <img src={a.posterImage} alt={a.title} referrerPolicy="no-referrer" className="w-9 h-12 object-cover rounded bg-ankirab-surface" />
                       <div>
                         <p className="font-bold text-white text-sm">{a.title}</p>
                         <p className="text-[11px] text-gray-500">{a.slug}</p>
@@ -556,7 +556,7 @@ export const AdminDashboardPage: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               {importedResults.map((item) => (
                 <div key={item.id} className="p-4 bg-ankirab-card border border-ankirab-border rounded-xl flex gap-3">
-                  <img src={item.posterImage} alt="Cover" className="w-16 aspect-[3/4] object-cover rounded" />
+                  <img src={item.posterImage} alt="Cover" referrerPolicy="no-referrer" className="w-16 aspect-[3/4] object-cover rounded bg-ankirab-surface" />
                   <div className="flex-1 overflow-hidden">
                     <p className="font-bold text-white text-sm line-clamp-1">{item.title.english || item.title.romaji}</p>
                     <p className="text-xs text-gray-400">{item.year} • {item.format}</p>

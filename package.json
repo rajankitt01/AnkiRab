@@ -8,7 +8,7 @@
     "apps/*"
   ],
   "scripts": {
-    "dev": "npm run dev --workspaces --if-present",
+    "dev": "concurrently -n \"API,WEB\" -c \"magenta,cyan\" \"npm run dev:api\" \"npm run dev:web\"",
     "dev:api": "npm run dev --workspace=@ankirab/api",
     "dev:web": "npm run dev --workspace=@ankirab/web",
     "build": "npm run build --workspaces --if-present",
@@ -28,5 +28,8 @@
     "multilingual"
   ],
   "author": "ANKIRAB Team",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^10.0.6"
+  }
 }

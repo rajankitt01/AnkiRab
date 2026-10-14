@@ -14,6 +14,9 @@ import userRoutes from './modules/users/user.routes';
 import searchRoutes from './modules/search/search.routes';
 import scheduleRoutes from './modules/schedule/schedule.routes';
 import adminRoutes from './modules/admin/admin.routes';
+import subtitleRoutes from './modules/subtitles/subtitle.routes';
+import videoRoutes from './modules/video/video.routes';
+import hindiRoutes from './modules/hindi/hindi.routes';
 
 export function createApp(): Application {
   const app = express();
@@ -60,6 +63,10 @@ export function createApp(): Application {
   });
 
   // Mount API modules
+  app.use('/api/hindi', hindiRoutes);
+  app.use('/api/stream', hindiRoutes);
+  app.use('/api/subtitles', subtitleRoutes);
+  app.use('/api/video', videoRoutes);
   app.use('/api/auth', authRoutes);
   app.use('/api/anime', animeRoutes);
   app.use('/api/episodes', episodeRoutes);

@@ -37,8 +37,16 @@ export const AnimeHero: React.FC<AnimeHeroProps> = ({ featuredList }) => {
       {/* Background Banner with layered cinematic gradient masks */}
       <div className="absolute inset-0">
         <img
+          key={bgImage}
           src={bgImage}
           alt={current.title}
+          referrerPolicy="no-referrer"
+          onError={(e) => {
+            const target = e.currentTarget;
+            if (current.posterImage && target.src !== current.posterImage) {
+              target.src = current.posterImage;
+            }
+          }}
           className="w-full h-full object-cover object-center filter brightness-90 transition-all duration-1000 transform scale-105"
         />
         {/* Left-to-right fade for readability */}

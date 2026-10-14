@@ -13,9 +13,10 @@ export const authLimiter = rateLimit({
 
 export const apiLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
-  max: 180, // 180 requests per minute
+  max: process.env.NODE_ENV === 'production' ? 600 : 2000, // Generous limit to prevent false 429s
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => req.path.startsWith('/video') || req.path.startsWith('/subtitles') || req.path === '/health',
   message: {
     success: false,
     error: 'Too many requests, please slow down'

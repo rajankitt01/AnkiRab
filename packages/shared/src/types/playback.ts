@@ -1,5 +1,14 @@
 import { EpisodeDto, AudioTrackDto, SubtitleTrackDto, VideoSourceDto } from './anime';
 
+export interface PlaybackServerDto {
+  id: string;
+  name: string;
+  badge: string;
+  type: 'embed' | 'hls' | 'mp4';
+  url: string;
+  isDefault?: boolean;
+}
+
 export interface PlaybackSessionDto {
   episode: EpisodeDto;
   anime: {
@@ -9,8 +18,11 @@ export interface PlaybackSessionDto {
     posterImage: string;
     hasHindiDub: boolean;
     hasEnglishDub: boolean;
+    tmdbId?: number;
   };
   sources: VideoSourceDto[];
+  servers?: PlaybackServerDto[];
+  realStreamUrl?: string;
   audioTracks: AudioTrackDto[];
   subtitleTracks: SubtitleTrackDto[];
   progressSeconds?: number;

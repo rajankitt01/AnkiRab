@@ -17,14 +17,17 @@ import {
   Share2
 } from 'lucide-react';
 import { useToastStore } from '../store/toastStore';
+import { usePlayerStore } from '../store/playerStore';
 
 export const WatchPage: React.FC = () => {
   const { episodeId } = useParams<{ episodeId: string }>();
   const navigate = useNavigate();
   const { addToast } = useToastStore();
+  const { audioLanguage, setAudioLanguage } = usePlayerStore();
 
   const [session, setSession] = useState<PlaybackSessionDto | null>(null);
   const [fullAnime, setFullAnime] = useState<AnimeDto | null>(null);
+  const [selectedSeasonId, setSelectedSeasonId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,14 +36,20 @@ export const WatchPage: React.FC = () => {
 
     const loadPlayback = async () => {
       try {
-        setIsLoading(true);
+        if (!session) setIsLoading(true);
         setError(null);
         const data = await playbackService.getPlaybackSession(episodeId);
         setSession(data);
+        setSelectedSeasonId(data.episode.seasonId);
+        if (data.anime.hasHindiDub) {
+          setAudioLanguage('hi');
+        }
 
-        // Fetch full anime info for episode list
-        const animeData = await animeService.getBySlug(data.anime.slug);
-        setFullAnime(animeData);
+        // Fetch full anime info if not loaded or if anime changed
+        if (!fullAnime || fullAnime.slug !== data.anime.slug) {
+          const animeData = await animeService.getBySlug(data.anime.slug);
+          setFullAnime(animeData);
+        }
       } catch (err: any) {
         setError(err.message || 'Failed to initialize video playback session');
       } finally {
@@ -82,7 +91,12 @@ export const WatchPage: React.FC = () => {
     );
   }
 
-  const allEpisodes = fullAnime?.seasons?.[0]?.episodes || [];
+  const currentSeason =
+    fullAnime?.seasons?.find((s) => s.id === (selectedSeasonId || session?.episode.seasonId)) ||
+    fullAnime?.seasons?.[0];
+  const allEpisodes = [...(currentSeason?.episodes || [])].sort(
+    (a, b) => a.episodeNumber - b.episodeNumber
+  );
 
   return (
     <div className="min-h-screen bg-ankirab-darkest pb-20">
@@ -114,8 +128,9 @@ export const WatchPage: React.FC = () => {
           {/* Main Video Player & Episode Info (col-span-2) */}
           <div className="lg:col-span-2 space-y-6">
             
-            {/* The Video Player Component */}
+            {/* The Video Player Component - keyed by anime & episode ID to guarantee clean lifecycle */}
             <VideoPlayer
+              key={`${session.anime.id}-${session.episode.id}`}
               session={session}
               onNextEpisode={
                 session.nextEpisode
@@ -133,7 +148,7 @@ export const WatchPage: React.FC = () => {
             <div className="p-6 bg-ankirab-card border border-ankirab-border rounded-2xl space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-ankirab-border/60">
                 <div>
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="flex flex-wrap items-center gap-2 mb-1.5">
                     <span className="text-xs font-bold text-ankirab-cyan uppercase tracking-wider">
                       Episode {session.episode.episodeNumber}
                     </span>
@@ -141,6 +156,53 @@ export const WatchPage: React.FC = () => {
                     <span className="text-xs text-gray-400">
                       {session.episode.durationMinutes || 24} minutes
                     </span>
+                    <span className="text-gray-500">•</span>
+                    {/* Audio Language Switcher Pills */}
+                    <div className="inline-flex items-center gap-1 bg-ankirab-surface px-2 py-0.5 rounded-lg border border-ankirab-border/60">
+                      <Languages className="w-3 h-3 text-ankirab-purple mr-0.5" />
+                      <button
+                        onClick={() => {
+                          setAudioLanguage('hi');
+                          addToast('Audio set to Hindi Dubbed (हिंदी)', 'info');
+                        }}
+                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded transition ${
+                          audioLanguage === 'hi'
+                            ? 'bg-amber-500 text-white shadow-sm'
+                            : 'text-gray-400 hover:text-white'
+                        }`}
+                        title="Hindi Dubbed"
+                      >
+                        🇮🇳 Hindi
+                      </button>
+                      <button
+                        onClick={() => {
+                          setAudioLanguage('en');
+                          addToast('Audio set to English Dubbed', 'info');
+                        }}
+                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded transition ${
+                          audioLanguage === 'en'
+                            ? 'bg-blue-600 text-white shadow-sm'
+                            : 'text-gray-400 hover:text-white'
+                        }`}
+                        title="English Dubbed"
+                      >
+                        🇬🇧 Eng
+                      </button>
+                      <button
+                        onClick={() => {
+                          setAudioLanguage('ja');
+                          addToast('Audio set to Japanese Original with Subtitles', 'info');
+                        }}
+                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded transition ${
+                          audioLanguage === 'ja'
+                            ? 'bg-rose-600 text-white shadow-sm'
+                            : 'text-gray-400 hover:text-white'
+                        }`}
+                        title="Japanese Subbed"
+                      >
+                        🇯🇵 Jap
+                      </button>
+                    </div>
                   </div>
 
                   <h1 className="text-xl sm:text-2xl font-black text-white">
@@ -205,14 +267,38 @@ export const WatchPage: React.FC = () => {
             
             {/* Playlist Container */}
             <div className="bg-ankirab-card border border-ankirab-border rounded-2xl overflow-hidden shadow-xl">
-              <div className="p-4 bg-ankirab-surface border-b border-ankirab-border/70 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-ankirab-cyan" />
-                  <h3 className="font-bold text-white text-sm">Episodes</h3>
+              <div className="p-4 bg-ankirab-surface border-b border-ankirab-border/70 flex flex-col gap-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-ankirab-cyan" />
+                    <h3 className="font-bold text-white text-sm">Episodes</h3>
+                  </div>
+                  <span className="text-xs text-gray-400 font-semibold">
+                    {allEpisodes.length} Episodes
+                  </span>
                 </div>
-                <span className="text-xs text-gray-400 font-semibold">
-                  {allEpisodes.length} Episodes
-                </span>
+
+                {/* Season Switcher if multiple seasons exist */}
+                {fullAnime?.seasons && fullAnime.seasons.length > 1 && (
+                  <div className="flex gap-1.5 overflow-x-auto no-scrollbar pt-1">
+                    {fullAnime.seasons.map((s) => {
+                      const isActiveSeason = (selectedSeasonId || session.episode.seasonId) === s.id;
+                      return (
+                        <button
+                          key={s.id}
+                          onClick={() => setSelectedSeasonId(s.id)}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition ${
+                            isActiveSeason
+                              ? 'bg-ankirab-purple text-white font-bold'
+                              : 'bg-ankirab-card text-gray-400 hover:text-white'
+                          }`}
+                        >
+                          {s.title}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Scrollable Episodes List */}
@@ -234,6 +320,7 @@ export const WatchPage: React.FC = () => {
                         <img
                           src={ep.thumbnail || session.anime.posterImage}
                           alt={ep.title}
+                          referrerPolicy="no-referrer"
                           className="w-full h-full object-cover"
                         />
                         {isCurrent && (
@@ -259,6 +346,17 @@ export const WatchPage: React.FC = () => {
                         <p className="text-xs font-semibold text-white line-clamp-1 mt-0.5">
                           {ep.title}
                         </p>
+                        <div className="flex items-center gap-1 mt-1">
+                          <span className="text-[9px] font-bold px-1 py-0.2 rounded bg-amber-500/15 text-amber-300">
+                            Hindi
+                          </span>
+                          <span className="text-[9px] font-bold px-1 py-0.2 rounded bg-blue-500/15 text-blue-300">
+                            Eng
+                          </span>
+                          <span className="text-[9px] font-bold px-1 py-0.2 rounded bg-rose-500/15 text-rose-300">
+                            Sub
+                          </span>
+                        </div>
                       </div>
                     </button>
                   );
@@ -272,6 +370,7 @@ export const WatchPage: React.FC = () => {
                 <img
                   src={fullAnime.posterImage}
                   alt={fullAnime.title}
+                  referrerPolicy="no-referrer"
                   className="w-16 aspect-[3/4] object-cover rounded-xl border border-ankirab-border"
                 />
                 <div className="flex-1">

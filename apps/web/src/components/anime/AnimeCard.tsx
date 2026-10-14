@@ -57,6 +57,13 @@ export const AnimeCard: React.FC<AnimeCardProps> = ({ anime, inWatchlist = false
           src={anime.posterImage}
           alt={anime.title}
           loading="lazy"
+          referrerPolicy="no-referrer"
+          onError={(e) => {
+            const target = e.currentTarget;
+            if (anime.coverImage && target.src !== anime.coverImage) {
+              target.src = anime.coverImage;
+            }
+          }}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
 

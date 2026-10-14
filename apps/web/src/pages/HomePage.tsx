@@ -102,6 +102,7 @@ export const HomePage: React.FC = () => {
                       <img
                         src={item.episode.thumbnail || item.anime.posterImage}
                         alt={item.anime.title}
+                        referrerPolicy="no-referrer"
                         className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                       />
                       {/* Play glyph overlay */}

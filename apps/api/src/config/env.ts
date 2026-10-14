@@ -17,5 +17,6 @@ export const env = {
   BCRYPT_SALT_ROUNDS: parseInt(process.env.BCRYPT_SALT_ROUNDS || '10', 10),
   ANILIST_API_URL: process.env.ANILIST_API_URL || 'https://graphql.anilist.co',
   VIDEO_PROVIDER_DEFAULT: process.env.VIDEO_PROVIDER_DEFAULT || 'demo',
-  VIDEO_STREAM_TOKEN_SECRET: process.env.VIDEO_STREAM_TOKEN_SECRET || 'ankirab_stream_secret_2026'
+  VIDEO_STREAM_TOKEN_SECRET: process.env.VIDEO_STREAM_TOKEN_SECRET || 'ankirab_stream_secret_2026',
+  API_BASE_URL: process.env.API_BASE_URL || 'http://localhost:4000'
 };

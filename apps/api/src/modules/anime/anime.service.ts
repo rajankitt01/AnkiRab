@@ -108,7 +108,16 @@ export class AnimeService {
       take: 6,
       include: {
         genres: { include: { genre: true } },
-        aliases: true
+        aliases: true,
+        seasons: {
+          include: {
+            episodes: {
+              take: 1,
+              orderBy: { episodeNumber: 'asc' }
+            }
+          },
+          orderBy: { seasonNumber: 'asc' }
+        }
       }
     });
     return list.map(a => this.mapAnimeDto(a));
@@ -164,9 +173,10 @@ export class AnimeService {
     return list.map(a => this.mapAnimeDto(a));
   }
 
-  async getAnimeBySlug(slug: string): Promise<AnimeDto> {
-    const anime = await prisma.anime.findUnique({
-      where: { slug },
+  async getAnimeBySlug(slugOrId: string): Promise<AnimeDto> {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId);
+    const anime = await prisma.anime.findFirst({
+      where: isUuid ? { OR: [{ id: slugOrId }, { slug: slugOrId }] } : { slug: slugOrId },
       include: {
         genres: {
           include: {
@@ -203,15 +213,16 @@ export class AnimeService {
     });
 
     if (!anime) {
-      throw new AppError(`Anime "${slug}" not found`, 404);
+      throw new AppError(`Anime "${slugOrId}" not found`, 404);
     }
 
     return this.mapAnimeDto(anime);
   }
 
-  async getAnimeSeasons(slug: string) {
-    const anime = await prisma.anime.findUnique({
-      where: { slug },
+  async getAnimeSeasons(slugOrId: string) {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId);
+    const anime = await prisma.anime.findFirst({
+      where: isUuid ? { OR: [{ id: slugOrId }, { slug: slugOrId }] } : { slug: slugOrId },
       select: {
         id: true,
         slug: true,
@@ -239,9 +250,10 @@ export class AnimeService {
     return anime.seasons;
   }
 
-  async getRelatedAnime(slug: string): Promise<AnimeDto[]> {
-    const current = await prisma.anime.findUnique({
-      where: { slug },
+  async getRelatedAnime(slugOrId: string): Promise<AnimeDto[]> {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId);
+    const current = await prisma.anime.findFirst({
+      where: isUuid ? { OR: [{ id: slugOrId }, { slug: slugOrId }] } : { slug: slugOrId },
       include: { genres: true }
     });
 

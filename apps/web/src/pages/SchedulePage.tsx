@@ -90,6 +90,7 @@ export const SchedulePage: React.FC = () => {
                 <img
                   src={item.anime.posterImage}
                   alt={item.anime.title}
+                  referrerPolicy="no-referrer"
                   className="w-full h-full object-cover group-hover:scale-105 transition"
                 />
               </Link>

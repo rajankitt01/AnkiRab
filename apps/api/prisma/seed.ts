@@ -134,68 +134,82 @@ async function main() {
       }
     }
 
-    // Create Season 1
-    const season = await prisma.season.upsert({
-      where: { animeId_seasonNumber: { animeId: anime.id, seasonNumber: 1 } },
-      update: { title: 'Season 1' },
-      create: { animeId: anime.id, seasonNumber: 1, title: 'Season 1' }
+    // Clean up any old seasons not in seed
+    const validSeasonNumbers = a.seasons.map(s => s.seasonNumber);
+    await prisma.season.deleteMany({
+      where: {
+        animeId: anime.id,
+        seasonNumber: { notIn: validSeasonNumbers }
+      }
     });
 
-    // Create Episodes
-    for (const ep of a.episodes) {
-      const episode = await prisma.episode.upsert({
-        where: { seasonId_episodeNumber: { seasonId: season.id, episodeNumber: ep.episodeNumber } },
-        update: {
-          title: ep.title,
-          synopsis: ep.synopsis,
-          thumbnail: ep.thumbnail,
-          durationMinutes: ep.durationMinutes,
-          introStart: ep.introStart,
-          introEnd: ep.introEnd,
-          outroStart: ep.outroStart,
-          outroEnd: ep.outroEnd
-        },
-        create: {
+    // Create Seasons and their respective Episodes
+    for (const s of a.seasons) {
+      const season = await prisma.season.upsert({
+        where: { animeId_seasonNumber: { animeId: anime.id, seasonNumber: s.seasonNumber } },
+        update: { title: s.title },
+        create: { animeId: anime.id, seasonNumber: s.seasonNumber, title: s.title }
+      });
+
+      // Clean up any extraneous episodes not in this season
+      const validEpNumbers = s.episodes.map(e => e.episodeNumber);
+      await prisma.episode.deleteMany({
+        where: {
           seasonId: season.id,
-          animeId: anime.id,
-          episodeNumber: ep.episodeNumber,
-          title: ep.title,
-          synopsis: ep.synopsis,
-          thumbnail: ep.thumbnail,
-          durationMinutes: ep.durationMinutes,
-          introStart: ep.introStart,
-          introEnd: ep.introEnd,
-          outroStart: ep.outroStart,
-          outroEnd: ep.outroEnd
+          episodeNumber: { notIn: validEpNumbers }
         }
       });
 
-      if (ep.episodeNumber === 1) {
-        firstEpisodeMap.set(a.slug, episode.id);
-      }
-
-      // Add default video source
-      const existingSrc = await prisma.videoSource.findFirst({
-        where: { episodeId: episode.id }
-      });
-      if (!existingSrc) {
-        await prisma.videoSource.create({
-          data: {
-            episodeId: episode.id,
-            provider: 'ANKIRAB Demo Provider',
-            quality: 'auto',
-            format: 'HLS',
-            url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
-            isMaster: true
+      // Create or update Episodes
+      for (const ep of s.episodes) {
+        const episode = await prisma.episode.upsert({
+          where: { seasonId_episodeNumber: { seasonId: season.id, episodeNumber: ep.episodeNumber } },
+          update: {
+            title: ep.title,
+            synopsis: ep.synopsis,
+            thumbnail: ep.thumbnail,
+            durationMinutes: ep.durationMinutes,
+            introStart: ep.introStart,
+            introEnd: ep.introEnd,
+            outroStart: ep.outroStart,
+            outroEnd: ep.outroEnd
+          },
+          create: {
+            seasonId: season.id,
+            animeId: anime.id,
+            episodeNumber: ep.episodeNumber,
+            title: ep.title,
+            synopsis: ep.synopsis,
+            thumbnail: ep.thumbnail,
+            durationMinutes: ep.durationMinutes,
+            introStart: ep.introStart,
+            introEnd: ep.introEnd,
+            outroStart: ep.outroStart,
+            outroEnd: ep.outroEnd
           }
         });
-      }
 
-      // Add Audio Tracks
-      const existingAudio = await prisma.audioTrack.findFirst({
-        where: { episodeId: episode.id }
-      });
-      if (!existingAudio) {
+        if (s.seasonNumber === 1 && ep.episodeNumber === 1) {
+          firstEpisodeMap.set(a.slug, episode.id);
+        }
+
+        // Add UNIQUE video sources for this specific episode (different video stream per episode)
+        await prisma.videoSource.deleteMany({ where: { episodeId: episode.id } });
+        for (const vs of ep.videoSources) {
+          await prisma.videoSource.create({
+            data: {
+              episodeId: episode.id,
+              provider: vs.provider,
+              quality: vs.quality,
+              format: vs.format,
+              url: vs.url,
+              isMaster: vs.isMaster
+            }
+          });
+        }
+
+        // Add verified audio tracks (Hindi, English, Japanese)
+        await prisma.audioTrack.deleteMany({ where: { episodeId: episode.id } });
         if (a.hasHindiDub) {
           await prisma.audioTrack.create({
             data: { episodeId: episode.id, language: 'hi', label: 'Hindi Dubbed (हिंदी)', isDefault: true }
@@ -209,19 +223,15 @@ async function main() {
         await prisma.audioTrack.create({
           data: { episodeId: episode.id, language: 'ja', label: 'Japanese (Original)', isDefault: false }
         });
-      }
 
-      // Add Subtitle Tracks
-      const existingSub = await prisma.subtitleTrack.findFirst({
-        where: { episodeId: episode.id }
-      });
-      if (!existingSub) {
+        // Add verified local WebVTT subtitle tracks (no CORS/403 errors)
+        await prisma.subtitleTrack.deleteMany({ where: { episodeId: episode.id } });
         await prisma.subtitleTrack.create({
           data: {
             episodeId: episode.id,
             language: 'en',
             label: 'English Subtitles',
-            vttUrl: 'https://bitmovin-a.akamaihd.net/content/sintel/subtitles/subtitles_en.vtt',
+            vttUrl: 'http://localhost:4000/api/subtitles/english.vtt',
             isDefault: true
           }
         });
@@ -230,7 +240,7 @@ async function main() {
             episodeId: episode.id,
             language: 'hi',
             label: 'Hindi Subtitles (हिंदी)',
-            vttUrl: 'https://bitmovin-a.akamaihd.net/content/sintel/subtitles/subtitles_de.vtt',
+            vttUrl: 'http://localhost:4000/api/subtitles/hindi.vtt',
             isDefault: false
           }
         });

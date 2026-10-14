@@ -44,6 +44,7 @@ export interface VideoSourceDto {
 export interface EpisodeDto {
   id: string;
   seasonId: string;
+  seasonNumber?: number;
   episodeNumber: number;
   title: string;
   synopsis?: string | null;
